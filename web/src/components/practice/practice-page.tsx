@@ -7,16 +7,16 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useVoiceCall } from "@/hooks/use-voice-call";
 import { useChatSocket } from "@/hooks/use-chat-socket";
 import { api, ApiError, ChatMessage, Conversation, IncomingCall, MatchResult, Partner, PracticeSession, RatingSummary, User } from "@/lib/api";
-import { clearTokens, isLoggedIn } from "@/lib/auth";
+import { isLoggedIn } from "@/lib/auth";
 
-import { PracticeHeader } from "./header";
+import { PageHeader } from "@/components/app/page-header";
+import { useToast } from "@/components/app/toast-provider";
 import { IdlePanel } from "./idle-panel";
 import { LEVELS, type Level } from "./languages";
 import { MatchingPanel } from "./matching-panel";
 import { RatePanel } from "./rate-panel";
 import { SessionPanel } from "./session-panel";
 import { InSessionChat } from "./in-session-chat";
-import { PracticeToast } from "./toast";
 import { PremiumModal } from "./premium-modal";
 import { IncomingCallModal } from "@/components/chat/incoming-call-modal";
 
@@ -43,8 +43,7 @@ export function PracticePage() {
   const [busy, setBusy] = useState(false);
   const [ending, setEnding] = useState(false);
   const [ratingBusy, setRatingBusy] = useState(false);
-  const [toast, setToast] = useState("");
-  const [toastOn, setToastOn] = useState(false);
+  const toast = useToast();
   const [session, setSession] = useState<PracticeSession | null>(null);
   const [partner, setPartner] = useState<Partner | null>(null);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
@@ -120,10 +119,12 @@ export function PracticePage() {
   }, []);
 
   const showToast = useCallback((message: string) => {
-    setToast(message);
-    setToastOn(true);
-    window.setTimeout(() => setToastOn(false), 2200);
-  }, []);
+    toast.success(message);
+  }, [toast]);
+
+  useEffect(() => {
+    if (error) toast.error(error);
+  }, [error, toast]);
 
   const saveLanguages = async (nat: string, learn: string) => {
     try {
@@ -256,6 +257,10 @@ export function PracticePage() {
         .catch(() => undefined);
     },
   });
+
+  useEffect(() => {
+    if (voice.error) toast.error(voice.error);
+  }, [voice.error, toast]);
 
   useChatSocket({
     enabled: ready && Boolean(me.data?.is_premium),
@@ -481,23 +486,16 @@ export function PracticePage() {
     }
   }
 
-  function logout() {
-    abortRef.current?.abort();
-    stopStream();
-    clearTokens();
-    router.push("/");
-  }
-
   if (!ready) return null;
 
   return (
-    <div className={`mx-auto w-full px-4 pb-16 pt-8 space-y-6 ${phase === "session" && chatOpen ? "max-w-4xl" : "max-w-[540px]"}`}>
-      <PracticeHeader
-        username={me.data?.username ?? ""}
-        isPremium={me.data?.is_premium}
-        onOpenPremium={() => setShowPremiumModal(true)}
-        onLogout={logout}
-      />
+    <div className={`mx-auto w-full px-4 py-8 space-y-6 ${phase === "session" && chatOpen ? "max-w-4xl" : "max-w-xl"}`}>
+      {phase === "idle" && (
+        <PageHeader
+          title="1:1 Practice"
+          description="Find a partner for a live voice exchange session."
+        />
+      )}
 
       {phase === "idle" ? (
         <IdlePanel
@@ -582,7 +580,6 @@ export function PracticePage() {
         />
       ) : null}
 
-      <PracticeToast message={toast} visible={toastOn} />
       <PremiumModal isOpen={showPremiumModal} onClose={() => setShowPremiumModal(false)} />
       {incomingCall && phase !== "session" ? (
         <IncomingCallModal

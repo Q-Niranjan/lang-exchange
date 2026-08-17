@@ -70,13 +70,6 @@ export function MatchingPanel({ learning, myUsername, error, onCancel }: Props) 
           </span>
         </div>
 
-        {error ? (
-          <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-xs font-medium text-destructive text-left w-full">
-            <span className="shrink-0">⚠️</span>
-            <span>{error}</span>
-          </div>
-        ) : null}
-
         {/* Cancel CTA */}
         <button
           type="button"

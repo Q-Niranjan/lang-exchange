@@ -63,3 +63,22 @@ func (h *Handler) Sessions(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"sessions": items})
 }
+
+func (h *Handler) Leaderboard(c *gin.Context) {
+	limit := 50
+	if l := c.Query("limit"); l != "" {
+		if v, err := strconv.Atoi(l); err == nil && v > 0 && v <= 100 {
+			limit = v
+		}
+	}
+	entries, rank, mine, err := h.svc.GetLeaderboard(c.Request.Context(), httputil.UserID(c), limit)
+	if err != nil {
+		httputil.RespondError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"entries": entries,
+		"my_rank": rank,
+		"my_entry": mine,
+	})
+}

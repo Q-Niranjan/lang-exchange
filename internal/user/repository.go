@@ -255,6 +255,88 @@ func (r *Repository) ListSessions(ctx context.Context, userID uuid.UUID, limit i
 	return out, rows.Err()
 }
 
+// ListLeaderboard returns top users ranked by total practice time.
+func (r *Repository) ListLeaderboard(ctx context.Context, limit int) ([]LeaderboardEntry, error) {
+	if limit <= 0 {
+		limit = 50
+	}
+	if limit > 100 {
+		limit = 100
+	}
+	const q = `
+		SELECT u.id, u.username, p.total_talk_seconds
+		FROM profiles p
+		JOIN users u ON u.id = p.user_id
+		WHERE p.total_talk_seconds > 0
+		ORDER BY p.total_talk_seconds DESC, u.username ASC
+		LIMIT $1`
+
+	rows, err := r.pool.Query(ctx, q, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var out []LeaderboardEntry
+	rank := 1
+	for rows.Next() {
+		var e LeaderboardEntry
+		if err := rows.Scan(&e.UserID, &e.Username, &e.TotalTalkSeconds); err != nil {
+			return nil, err
+		}
+		e.Rank = rank
+		e.Level = LevelFromSeconds(e.TotalTalkSeconds)
+		rank++
+		out = append(out, e)
+	}
+	if out == nil {
+		out = []LeaderboardEntry{}
+	}
+	return out, rows.Err()
+}
+
+// GetLeaderboardRank returns the rank and entry for a specific user.
+func (r *Repository) GetLeaderboardRank(ctx context.Context, userID uuid.UUID) (int, LeaderboardEntry, error) {
+	const q = `
+		WITH ranked AS (
+			SELECT
+				u.id,
+				u.username,
+				p.total_talk_seconds,
+				RANK() OVER (ORDER BY p.total_talk_seconds DESC, u.username ASC) AS rank
+			FROM profiles p
+			JOIN users u ON u.id = p.user_id
+			WHERE p.total_talk_seconds > 0
+		)
+		SELECT rank, id, username, total_talk_seconds
+		FROM ranked
+		WHERE id = $1`
+
+	var e LeaderboardEntry
+	err := r.pool.QueryRow(ctx, q, userID).Scan(&e.Rank, &e.UserID, &e.Username, &e.TotalTalkSeconds)
+	if errors.Is(err, pgx.ErrNoRows) {
+		u, uerr := r.GetByID(ctx, userID)
+		if uerr != nil {
+			return 0, LeaderboardEntry{}, uerr
+		}
+		p, perr := r.GetProfile(ctx, userID)
+		if perr != nil && perr != ErrNotFound {
+			return 0, LeaderboardEntry{}, perr
+		}
+		return 0, LeaderboardEntry{
+			UserID:           userID,
+			Username:         u.Username,
+			TotalTalkSeconds: p.TotalTalkSeconds,
+			Level:            LevelFromSeconds(p.TotalTalkSeconds),
+		}, nil
+	}
+	if err != nil {
+		return 0, LeaderboardEntry{}, err
+	}
+	e.Level = LevelFromSeconds(e.TotalTalkSeconds)
+	return e.Rank, e, nil
+}
+
 type scanner interface {
 	Scan(dest ...any) error
 }

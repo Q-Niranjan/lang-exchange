@@ -74,7 +74,7 @@ export function PremiumModal({ isOpen, onClose }: Props) {
         <div className="space-y-2">
           <button
             type="button"
-            onClick={() => { onClose(); router.push("/app/billing"); }}
+            onClick={() => { onClose(); router.push("/app/plan"); }}
             className={`w-full flex items-center justify-center gap-2 rounded-xl bg-brand-blue py-3.5 text-xs sm:text-sm font-extrabold uppercase tracking-wider text-white shadow-blue-glow hover:bg-brand-blue-dark active:scale-[0.98] transition-all ${focusRing}`}
           >
             <Crown className="h-4 w-4" />

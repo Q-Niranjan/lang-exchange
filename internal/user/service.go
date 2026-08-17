@@ -76,6 +76,18 @@ func (s *Service) GetSessions(ctx context.Context, id uuid.UUID, limit int) ([]S
 	return s.repo.ListSessions(ctx, id, limit)
 }
 
+func (s *Service) GetLeaderboard(ctx context.Context, userID uuid.UUID, limit int) ([]LeaderboardEntry, int, LeaderboardEntry, error) {
+	entries, err := s.repo.ListLeaderboard(ctx, limit)
+	if err != nil {
+		return nil, 0, LeaderboardEntry{}, err
+	}
+	rank, mine, err := s.repo.GetLeaderboardRank(ctx, userID)
+	if err != nil {
+		return nil, 0, LeaderboardEntry{}, err
+	}
+	return entries, rank, mine, nil
+}
+
 func ValidateUsername(username string) error {
 	if !usernameRe.MatchString(username) {
 		return httputil.BadRequest("invalid_username", "username must be 3-30 alphanumeric or underscore characters")

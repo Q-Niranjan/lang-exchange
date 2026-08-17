@@ -27,9 +27,10 @@ type Feed = {
 type Props = {
   enabled: boolean;
   onLocked?: () => void;
+  popupClass?: string;
 };
 
-export function NotificationBell({ enabled, onLocked }: Props) {
+export function NotificationBell({ enabled, onLocked, popupClass }: Props) {
   const router = useRouter();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -72,7 +73,7 @@ export function NotificationBell({ enabled, onLocked }: Props) {
     try {
       await api<MatchResult>(`/api/v1/practice/${item.session_id}/accept`, { method: "POST" });
       setOpen(false);
-      router.push("/app");
+      router.push("/app/practice");
     } catch (err) {
       console.warn((err as ApiError).message);
     } finally {
@@ -90,7 +91,7 @@ export function NotificationBell({ enabled, onLocked }: Props) {
       });
       await dismiss(item.id);
       setOpen(false);
-      router.push("/app");
+      router.push("/app/practice");
     } catch {
       setBusy("");
     }
@@ -132,7 +133,7 @@ export function NotificationBell({ enabled, onLocked }: Props) {
       </button>
 
       {open ? (
-        <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-[min(calc(100vw-2rem),22rem)] rounded-xl border border-border bg-card shadow-lg overflow-hidden">
+        <div className={`absolute z-50 w-[min(calc(100vw-2rem),22rem)] rounded-xl border border-border bg-card shadow-lg overflow-hidden ${popupClass ?? "right-0 top-[calc(100%+8px)]"}`}>
           <div className="flex items-center justify-between border-b border-border px-3 py-2">
             <div className="text-xs font-extrabold">Notifications</div>
             <div className="text-[10px] text-muted-foreground">Calls & messages stay until you act</div>

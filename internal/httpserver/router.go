@@ -59,6 +59,7 @@ func NewRouter(d Deps) *gin.Engine {
 			authed.PATCH("/users/me", d.Users.UpdateMe)
 			authed.GET("/users/me/stats", d.Users.Stats)
 			authed.GET("/users/me/sessions", d.Users.Sessions)
+			authed.GET("/users/leaderboard", d.Users.Leaderboard)
 			authed.GET("/users/:id/rating", d.Rating.UserRating)
 
 			// Payments – accessible without active premium so users can upgrade

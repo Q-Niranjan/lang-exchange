@@ -1,7 +1,5 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import { PracticePage } from "@/components/practice/practice-page";
-
-export default function AppPage() {
-  return <PracticePage />;
+export default function AppIndex() {
+  redirect("/app/home");
 }

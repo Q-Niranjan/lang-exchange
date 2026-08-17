@@ -2,6 +2,8 @@ package friend
 
 import (
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -39,12 +41,36 @@ func NewHandler(repo *Repository, sessions *practice.Repository, users *user.Rep
 
 func (h *Handler) List(c *gin.Context) {
 	userID := httputil.UserID(c)
-	rows, err := h.repo.List(c.Request.Context(), userID)
+	page := 1
+	limit := 20
+	if p := c.Query("page"); p != "" {
+		if v, err := strconv.Atoi(p); err == nil && v > 0 {
+			page = v
+		}
+	}
+	if l := c.Query("limit"); l != "" {
+		if v, err := strconv.Atoi(l); err == nil && v > 0 && v <= 50 {
+			limit = v
+		}
+	}
+	query := strings.TrimSpace(c.Query("q"))
+
+	rows, total, err := h.repo.ListPaginated(c.Request.Context(), userID, page, limit, query)
 	if err != nil {
 		httputil.RespondError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"friends": h.decorate(c, userID, rows)})
+	totalPages := total / limit
+	if total%limit != 0 {
+		totalPages++
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"friends":      h.decorate(c, userID, rows),
+		"total":        total,
+		"page":         page,
+		"limit":        limit,
+		"total_pages":  totalPages,
+	})
 }
 
 func (h *Handler) Status(c *gin.Context) {

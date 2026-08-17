@@ -37,6 +37,7 @@ type OrderResponse struct {
 	Status         string         `json:"status"`
 	GatewayOrderID *string        `json:"gateway_order_id,omitempty"`
 	Checkout       map[string]any `json:"checkout"`
+	CreatedAt      time.Time      `json:"created_at"`
 }
 
 type VerifyRequest struct {
@@ -244,5 +245,6 @@ func toResponse(o Order) OrderResponse {
 		Status:         o.Status,
 		GatewayOrderID: o.GatewayOrderID,
 		Checkout:       o.CheckoutPayload,
+		CreatedAt:      o.CreatedAt,
 	}
 }

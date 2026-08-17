@@ -8,10 +8,11 @@ import { Lock, Smartphone, ArrowRight, ShieldCheck } from "lucide-react";
 
 import { api, ApiError, TokenPair } from "@/lib/api";
 import { setTokens } from "@/lib/auth";
+import { useToast } from "@/components/app/toast-provider";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [error, setError] = useState("");
+  const toast = useToast();
   const [needOtp, setNeedOtp] = useState(false);
   const [form, setForm] = useState({ mobile_number: "", password: "", otp: "" });
 
@@ -27,15 +28,15 @@ export default function LoginPage() {
       }),
     onSuccess: (tokens) => {
       setTokens(tokens.access_token, tokens.refresh_token);
-      router.push("/app");
+      router.push("/app/home");
     },
     onError: (err: ApiError) => {
       if (err.error === "unverified") {
         setNeedOtp(true);
-        setError("Account not verified. Enter the OTP that was resent.");
+        toast.info("Account not verified. Enter the OTP that was resent.");
         return;
       }
-      setError(err.message || "Could not log in");
+      toast.error(err.message || "Could not log in");
     },
   });
 
@@ -48,14 +49,13 @@ export default function LoginPage() {
       }),
     onSuccess: (tokens) => {
       setTokens(tokens.access_token, tokens.refresh_token);
-      router.push("/app");
+      router.push("/app/home");
     },
-    onError: (err: ApiError) => setError(err.message || "Invalid OTP"),
+    onError: (err: ApiError) => toast.error(err.message || "Invalid OTP"),
   });
 
   function onSubmit(e: FormEvent) {
     e.preventDefault();
-    setError("");
     if (needOtp) verify.mutate();
     else login.mutate();
   }
@@ -66,9 +66,7 @@ export default function LoginPage() {
 
         {/* Header Title */}
         <div className="text-center space-y-2">
-          <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm mb-1">
-            <ShieldCheck className="h-6 w-6" />
-          </div>
+        
           <h1 className="font-extrabold text-2xl sm:text-3xl text-foreground">Welcome Back</h1>
           <p className="text-xs sm:text-sm text-muted-foreground">Log in to enter the EngFluency practice studio.</p>
         </div>
@@ -122,12 +120,6 @@ export default function LoginPage() {
                   onChange={(e) => setForm({ ...form, otp: e.target.value })}
                   className="w-full rounded-lg border border-input bg-background p-2.5 text-xs font-semibold text-foreground focus:border-ring focus:outline-none"
                 />
-              </div>
-            ) : null}
-
-            {error ? (
-              <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs font-medium text-destructive">
-                ⚠️ {error}
               </div>
             ) : null}
 

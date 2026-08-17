@@ -8,11 +8,12 @@ import { User, Smartphone, Lock, ArrowRight, Sparkles } from "lucide-react";
 
 import { api, ApiError, TokenPair } from "@/lib/api";
 import { setTokens } from "@/lib/auth";
+import { useToast } from "@/components/app/toast-provider";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const toast = useToast();
   const [step, setStep] = useState<"form" | "otp">("form");
-  const [error, setError] = useState("");
   const [form, setForm] = useState({
     username: "",
     mobile_number: "",
@@ -34,10 +35,10 @@ export default function RegisterPage() {
         }),
       }),
     onSuccess: () => {
-      setError("");
+      toast.info("Enter the OTP sent to your phone.");
       setStep("otp");
     },
-    onError: (err: ApiError) => setError(err.message || "Could not register"),
+    onError: (err: ApiError) => toast.error(err.message || "Could not register"),
   });
 
   const verify = useMutation({
@@ -49,9 +50,10 @@ export default function RegisterPage() {
       }),
     onSuccess: (tokens) => {
       setTokens(tokens.access_token, tokens.refresh_token);
-      router.push("/app");
+      toast.success("Account verified! Welcome to LangFluency.");
+      router.push("/app/home");
     },
-    onError: (err: ApiError) => setError(err.message || "Invalid OTP"),
+    onError: (err: ApiError) => toast.error(err.message || "Invalid OTP"),
   });
 
   function onSubmit(e: FormEvent) {
@@ -66,9 +68,7 @@ export default function RegisterPage() {
 
         {/* Header Title */}
         <div className="text-center space-y-2">
-          <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm mb-1">
-            <Sparkles className="h-6 w-6" />
-          </div>
+       
           <h1 className="font-extrabold text-2xl sm:text-3xl text-foreground">
             {step === "form" ? "Create Free Account" : "Verify Phone Number"}
           </h1>
@@ -164,12 +164,6 @@ export default function RegisterPage() {
                 />
               </div>
             )}
-
-            {error ? (
-              <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs font-medium text-destructive">
-                ⚠️ {error}
-              </div>
-            ) : null}
 
             <button
               type="submit"

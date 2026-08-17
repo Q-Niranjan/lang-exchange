@@ -75,6 +75,15 @@ func LevelFromSeconds(s int64) string {
 	}
 }
 
+// LeaderboardEntry is one row on the practice-time leaderboard.
+type LeaderboardEntry struct {
+	Rank             int       `json:"rank"`
+	UserID           uuid.UUID `json:"user_id"`
+	Username         string    `json:"username"`
+	TotalTalkSeconds int64     `json:"total_talk_seconds"`
+	Level            string    `json:"level"`
+}
+
 // SessionHistoryItem is one row in the call history.
 type SessionHistoryItem struct {
 	ID          uuid.UUID  `json:"id"`

@@ -128,13 +128,6 @@ export function RatePanel({
           />
         </div>
 
-        {error ? (
-          <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-xs font-medium text-destructive">
-            <span className="shrink-0">⚠️</span>
-            <span>{error}</span>
-          </div>
-        ) : null}
-
         {/* Submit & Skip Actions */}
         <div className="flex items-center gap-3 pt-2">
           <button

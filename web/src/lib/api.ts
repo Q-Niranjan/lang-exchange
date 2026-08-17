@@ -221,4 +221,27 @@ export type PaymentOrder = {
   status: string;
   gateway_order_id?: string;
   checkout?: Record<string, unknown>;
+  created_at?: string;
+};
+
+export type LeaderboardEntry = {
+  rank: number;
+  user_id: string;
+  username: string;
+  total_talk_seconds: number;
+  level: string;
+};
+
+export type LeaderboardResponse = {
+  entries: LeaderboardEntry[];
+  my_rank: number;
+  my_entry: LeaderboardEntry;
+};
+
+export type FriendsListResponse = {
+  friends: Friend[];
+  total: number;
+  page: number;
+  limit: number;
+  total_pages: number;
 };
