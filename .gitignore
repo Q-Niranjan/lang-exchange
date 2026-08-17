@@ -1,0 +1,12 @@
+.bin/
+tmp/
+.env
+*.exe
+*.out
+vendor/
+.idea/
+.vscode/
+coverage.out
+.tools/
+node_modules/
+.next/

@@ -1,0 +1,7 @@
+DROP MATERIALIZED VIEW IF EXISTS user_ratings;
+DROP TABLE IF EXISTS payment_orders;
+DROP TABLE IF EXISTS subscriptions;
+DROP TABLE IF EXISTS ratings;
+DROP TABLE IF EXISTS practice_sessions;
+DROP TABLE IF EXISTS profiles;
+DROP TABLE IF EXISTS users;
