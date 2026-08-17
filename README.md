@@ -161,3 +161,5 @@ internal/
 migrations/
 web/           Next.js UI (home, register, login, practice, premium chat)
 ```
+
+author-Niranjan
