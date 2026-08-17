@@ -201,6 +201,12 @@ func (s *Service) End(ctx context.Context, userID, sessionID uuid.UUID) (Session
 		s.notifier.Notify(ended.UserAID, payload)
 		s.notifier.Notify(ended.UserBID, payload)
 	}
+	// Update talk-time and streak for both participants.
+	if s.users != nil && ended.EndedAt != nil {
+		secs := int64(ended.EndedAt.Sub(ended.StartedAt).Seconds())
+		_ = s.users.AddTalkSecondsAndStreak(ctx, ended.UserAID, secs)
+		_ = s.users.AddTalkSecondsAndStreak(ctx, ended.UserBID, secs)
+	}
 	return ended, nil
 }
 

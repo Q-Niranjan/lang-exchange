@@ -14,13 +14,14 @@ import (
 
 type Service struct {
 	cfg     config.PaymentConfig
+	baseURL string
 	repo    *Repository
 	users   *user.Repository
 	gateway Gateway
 }
 
-func NewService(cfg config.PaymentConfig, repo *Repository, users *user.Repository, gateway Gateway) *Service {
-	return &Service{cfg: cfg, repo: repo, users: users, gateway: gateway}
+func NewService(cfg config.PaymentConfig, baseURL string, repo *Repository, users *user.Repository, gateway Gateway) *Service {
+	return &Service{cfg: cfg, baseURL: baseURL, repo: repo, users: users, gateway: gateway}
 }
 
 type CreateOrderRequest struct {
@@ -88,6 +89,7 @@ func (s *Service) CreateOrder(ctx context.Context, userID uuid.UUID, in CreateOr
 		Currency:     plan.Currency,
 		CustomerName: u.Username,
 		Mobile:       u.MobileNumber,
+		NotifyURL:    s.baseURL + "/api/v1/webhooks/payments",
 	})
 	if err != nil {
 		return OrderResponse{}, httputil.New(502, "gateway_error", err.Error())
@@ -200,6 +202,10 @@ func (s *Service) activate(ctx context.Context, order Order, paymentRef string) 
 		return err
 	}
 	return s.users.SetPremium(ctx, order.UserID, until)
+}
+
+func (s *Service) GetHistory(ctx context.Context, userID uuid.UUID) ([]Order, error) {
+	return s.repo.ListByUserID(ctx, userID)
 }
 
 func (s *Service) DummyActivate(ctx context.Context, userID uuid.UUID) error {

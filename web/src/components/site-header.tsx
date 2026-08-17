@@ -23,7 +23,7 @@ export function SiteHeader() {
     router.push("/");
   }
 
-  if (pathname === "/app") return null;
+  if (pathname.startsWith("/app")) return null;
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-md transition-all">
@@ -35,7 +35,7 @@ export function SiteHeader() {
               <span>E</span>
             </div>
             <span className="text-base sm:text-lg font-extrabold tracking-tight text-foreground">
-              EngFluency
+              LangExchange
             </span>
           </Link>
 

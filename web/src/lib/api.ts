@@ -1,6 +1,6 @@
 import { clearTokens, getAccessToken, getRefreshToken, setTokens } from "./auth";
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
+const API = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080").replace(/\/+$/, "");
 
 export function practiceSocketURL(sessionId: string) {
   const token = getAccessToken() ?? "";
@@ -96,6 +96,9 @@ export type User = {
     native_language?: string;
     learning_language?: string;
     bio?: string;
+    country?: string;
+    streak_days?: number;
+    total_talk_seconds?: number;
   };
 };
 
@@ -188,4 +191,34 @@ export type Plan = {
   duration_days: number;
   amount_paise: number;
   currency: string;
+};
+
+export type UserStats = {
+  total_talk_seconds: number;
+  streak_days: number;
+  level: string;
+  session_count: number;
+  avg_score: number;
+  rating_count: number;
+};
+
+export type SessionHistoryItem = {
+  id: string;
+  partner_id: string;
+  partner_username: string;
+  status: string;
+  started_at: string;
+  ended_at?: string;
+  duration_seconds: number;
+};
+
+export type PaymentOrder = {
+  id: string;
+  plan: string;
+  gateway: string;
+  amount_paise: number;
+  currency: string;
+  status: string;
+  gateway_order_id?: string;
+  checkout?: Record<string, unknown>;
 };

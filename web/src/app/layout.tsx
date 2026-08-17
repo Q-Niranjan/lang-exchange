@@ -10,9 +10,9 @@ import "./globals.css";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
-  title: "EngFluency — language practice with a real partner",
+  title: "LangExchange — Practice any language with native speakers",
   description:
-    "Match with a real partner for a live 1:1 language exchange. Free matching and ratings. Premium messaging.",
+    "Match with real native speakers for live 1:1 voice exchange. 7-day free trial. No credit card needed.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
@@ -23,8 +23,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       >
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
-          enableSystem
+          defaultTheme="dark"
+          enableSystem={false}
           disableTransitionOnChange
         >
           <Providers>

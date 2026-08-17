@@ -27,6 +27,17 @@ const config: Config = {
         input:                "hsl(var(--input))",
         ring:                 "hsl(var(--ring))",
 
+        /* ── brand palette ── */
+        "brand-900": "#0c1420",
+        "brand-800": "#111d2d",
+        "brand-700": "#162336",
+        "brand-600": "#1e2e42",
+        "brand-500": "#253347",
+        "brand-400": "#3b5270",
+        "brand-blue": "#3b82f6",
+        "brand-blue-light": "#60a5fa",
+        "brand-blue-dark": "#2563eb",
+
         /* ── practice page (dark immersive theme) ── */
         dusk:       "#1E2A44",
         duskSoft:   "#253652",
@@ -45,7 +56,6 @@ const config: Config = {
       fontFamily: {
         sans: ["var(--font-geist-sans)", "ui-sans-serif", "system-ui"],
         mono: ["var(--font-geist-mono)", "ui-monospace", "monospace"],
-        /* practice-specific fonts */
         puente: ["var(--font-practice-sans)", "Inter", "ui-sans-serif", "system-ui"],
         fraunces: ["var(--font-practice-display)", "Fraunces", "Georgia", "serif"],
         jetbrains: ["var(--font-jetbrains)", "var(--font-practice-mono)", "ui-monospace", "monospace"],
@@ -59,6 +69,7 @@ const config: Config = {
       boxShadow: {
         card: "0 18px 40px -28px rgba(26, 23, 20, 0.45)",
         puente: "0 30px 60px -25px rgba(0, 0, 0, 0.55)",
+        "blue-glow": "0 0 24px -6px rgba(59, 130, 246, 0.35)",
       },
       keyframes: {
         fadeUp: {

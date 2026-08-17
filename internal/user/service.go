@@ -51,6 +51,7 @@ type UpdateMeInput struct {
 	LearningLanguage *string `json:"learning_language"`
 	Bio              *string `json:"bio"`
 	AvatarURL        *string `json:"avatar_url"`
+	Country          *string `json:"country"`
 }
 
 func (s *Service) UpdateMe(ctx context.Context, id uuid.UUID, in UpdateMeInput) (PublicUser, error) {
@@ -60,10 +61,19 @@ func (s *Service) UpdateMe(ctx context.Context, id uuid.UUID, in UpdateMeInput) 
 		LearningLanguage: in.LearningLanguage,
 		Bio:              in.Bio,
 		AvatarURL:        in.AvatarURL,
+		Country:          in.Country,
 	}); err != nil {
 		return PublicUser{}, err
 	}
 	return s.Me(ctx, id)
+}
+
+func (s *Service) GetStats(ctx context.Context, id uuid.UUID) (UserStats, error) {
+	return s.repo.GetStats(ctx, id)
+}
+
+func (s *Service) GetSessions(ctx context.Context, id uuid.UUID, limit int) ([]SessionHistoryItem, error) {
+	return s.repo.ListSessions(ctx, id, limit)
 }
 
 func ValidateUsername(username string) error {

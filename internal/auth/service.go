@@ -106,6 +106,11 @@ func (s *Service) VerifyOTP(ctx context.Context, in VerifyOTPInput) (TokenPair, 
 	if err := s.users.MarkVerified(ctx, u.ID); err != nil {
 		return TokenPair{}, err
 	}
+	// Grant 7-day free trial for brand-new users.
+	if !u.IsPremium {
+		trial := time.Now().Add(7 * 24 * time.Hour)
+		_ = s.users.SetPremium(ctx, u.ID, trial)
+	}
 	return s.issue(ctx, u.ID)
 }
 

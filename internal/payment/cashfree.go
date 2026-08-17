@@ -47,7 +47,7 @@ func (g *Cashfree) CreateOrder(ctx context.Context, in CreateOrderInput) (*Gatew
 			"customer_name":  in.CustomerName,
 		},
 		"order_meta": map[string]any{
-			"notify_url": "",
+			"notify_url": in.NotifyURL,
 		},
 		"order_note": in.PlanName,
 	})
@@ -124,6 +124,9 @@ func (g *Cashfree) Verify(ctx context.Context, in VerifyInput) (*VerifyResult, e
 func (g *Cashfree) ParseWebhook(headers http.Header, body []byte) (*WebhookEvent, error) {
 	ts := headers.Get("x-webhook-timestamp")
 	sig := headers.Get("x-webhook-signature")
+	if sig == "" {
+		return nil, fmt.Errorf("missing cashfree webhook signature")
+	}
 	secret := g.cfg.WebhookSecret
 	if secret == "" {
 		secret = g.cfg.SecretKey
@@ -132,7 +135,7 @@ func (g *Cashfree) ParseWebhook(headers http.Header, body []byte) (*WebhookEvent
 	_, _ = mac.Write([]byte(ts))
 	_, _ = mac.Write(body)
 	expected := base64.StdEncoding.EncodeToString(mac.Sum(nil))
-	if sig != "" && !hmac.Equal([]byte(expected), []byte(sig)) {
+	if !hmac.Equal([]byte(expected), []byte(sig)) {
 		return nil, fmt.Errorf("invalid cashfree webhook signature")
 	}
 	var payload struct {

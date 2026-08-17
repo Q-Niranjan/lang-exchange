@@ -15,6 +15,7 @@ type CreateOrderInput struct {
 	CustomerName string
 	Mobile       string
 	Email        string
+	NotifyURL    string
 }
 
 type GatewayOrder struct {

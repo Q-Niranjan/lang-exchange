@@ -103,6 +103,32 @@ func (r *Repository) CreateSubscription(ctx context.Context, userID uuid.UUID, p
 	return err
 }
 
+func (r *Repository) ListByUserID(ctx context.Context, userID uuid.UUID) ([]Order, error) {
+	const q = `
+		SELECT id, user_id, plan, gateway, gateway_order_id, amount_paise, currency, status, checkout_payload, created_at, updated_at
+		FROM payment_orders
+		WHERE user_id = $1
+		ORDER BY created_at DESC
+		LIMIT 50`
+	rows, err := r.pool.Query(ctx, q, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []Order
+	for rows.Next() {
+		o, err := scanOrder(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, o)
+	}
+	if out == nil {
+		out = []Order{}
+	}
+	return out, rows.Err()
+}
+
 type scanner interface {
 	Scan(dest ...any) error
 }

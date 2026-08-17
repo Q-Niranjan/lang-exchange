@@ -3,6 +3,7 @@ package payment
 import (
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -11,10 +12,11 @@ import (
 
 type Handler struct {
 	svc *Service
+	env string
 }
 
-func NewHandler(svc *Service) *Handler {
-	return &Handler{svc: svc}
+func NewHandler(svc *Service, env string) *Handler {
+	return &Handler{svc: svc, env: env}
 }
 
 func (h *Handler) Plans(c *gin.Context) {
@@ -66,7 +68,25 @@ func (h *Handler) Webhook(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "ok"})
 }
 
+func (h *Handler) History(c *gin.Context) {
+	orders, err := h.svc.GetHistory(c.Request.Context(), httputil.UserID(c))
+	if err != nil {
+		httputil.RespondError(c, err)
+		return
+	}
+	out := make([]OrderResponse, 0, len(orders))
+	for _, o := range orders {
+		out = append(out, toResponse(o))
+	}
+	c.JSON(http.StatusOK, gin.H{"orders": out})
+}
+
+// DummyActivate is only available outside production for demo purposes.
 func (h *Handler) DummyActivate(c *gin.Context) {
+	if strings.EqualFold(h.env, "production") {
+		httputil.RespondError(c, httputil.NotFound("not found"))
+		return
+	}
 	if err := h.svc.DummyActivate(c.Request.Context(), httputil.UserID(c)); err != nil {
 		httputil.RespondError(c, err)
 		return

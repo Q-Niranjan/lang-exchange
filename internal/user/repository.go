@@ -86,7 +86,8 @@ func (r *Repository) GetProfilesByIDs(ctx context.Context, ids []uuid.UUID) (map
 		return out, nil
 	}
 	const q = `
-		SELECT user_id, native_language, learning_language, bio, avatar_url
+		SELECT user_id, native_language, learning_language, bio, avatar_url,
+		       country, streak_days, last_practice_date::text, total_talk_seconds
 		FROM profiles WHERE user_id = ANY($1)`
 	rows, err := r.pool.Query(ctx, q, ids)
 	if err != nil {
@@ -94,8 +95,8 @@ func (r *Repository) GetProfilesByIDs(ctx context.Context, ids []uuid.UUID) (map
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var p Profile
-		if err := rows.Scan(&p.UserID, &p.NativeLanguage, &p.LearningLanguage, &p.Bio, &p.AvatarURL); err != nil {
+		p, err := scanProfile(rows)
+		if err != nil {
 			return nil, err
 		}
 		out[p.UserID] = p
@@ -127,10 +128,10 @@ func (r *Repository) MarkVerified(ctx context.Context, id uuid.UUID) error {
 
 func (r *Repository) GetProfile(ctx context.Context, userID uuid.UUID) (Profile, error) {
 	const q = `
-		SELECT user_id, native_language, learning_language, bio, avatar_url
+		SELECT user_id, native_language, learning_language, bio, avatar_url,
+		       country, streak_days, last_practice_date::text, total_talk_seconds
 		FROM profiles WHERE user_id = $1`
-	var p Profile
-	err := r.pool.QueryRow(ctx, q, userID).Scan(&p.UserID, &p.NativeLanguage, &p.LearningLanguage, &p.Bio, &p.AvatarURL)
+	p, err := scanProfile(r.pool.QueryRow(ctx, q, userID))
 	if errors.Is(err, pgx.ErrNoRows) {
 		return Profile{}, ErrNotFound
 	}
@@ -139,14 +140,15 @@ func (r *Repository) GetProfile(ctx context.Context, userID uuid.UUID) (Profile,
 
 func (r *Repository) UpdateProfile(ctx context.Context, p Profile) error {
 	const q = `
-		INSERT INTO profiles (user_id, native_language, learning_language, bio, avatar_url)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO profiles (user_id, native_language, learning_language, bio, avatar_url, country)
+		VALUES ($1, $2, $3, $4, $5, $6)
 		ON CONFLICT (user_id) DO UPDATE SET
-			native_language = COALESCE(EXCLUDED.native_language, profiles.native_language),
+			native_language   = COALESCE(EXCLUDED.native_language, profiles.native_language),
 			learning_language = COALESCE(EXCLUDED.learning_language, profiles.learning_language),
-			bio = COALESCE(EXCLUDED.bio, profiles.bio),
-			avatar_url = COALESCE(EXCLUDED.avatar_url, profiles.avatar_url)`
-	_, err := r.pool.Exec(ctx, q, p.UserID, p.NativeLanguage, p.LearningLanguage, p.Bio, p.AvatarURL)
+			bio               = COALESCE(EXCLUDED.bio, profiles.bio),
+			avatar_url        = COALESCE(EXCLUDED.avatar_url, profiles.avatar_url),
+			country           = COALESCE(EXCLUDED.country, profiles.country)`
+	_, err := r.pool.Exec(ctx, q, p.UserID, p.NativeLanguage, p.LearningLanguage, p.Bio, p.AvatarURL, p.Country)
 	return err
 }
 
@@ -156,6 +158,101 @@ func (r *Repository) SetPremium(ctx context.Context, userID uuid.UUID, until tim
 		WHERE id = $1`
 	_, err := r.pool.Exec(ctx, q, userID, until)
 	return err
+}
+
+// AddTalkSecondsAndStreak adds seconds to total_talk_seconds and updates the streak.
+func (r *Repository) AddTalkSecondsAndStreak(ctx context.Context, userID uuid.UUID, seconds int64) error {
+	if seconds <= 0 {
+		return nil
+	}
+	const q = `
+		UPDATE profiles SET
+			total_talk_seconds = total_talk_seconds + $2,
+			streak_days = CASE
+				WHEN last_practice_date IS NULL          THEN 1
+				WHEN last_practice_date = CURRENT_DATE   THEN streak_days
+				WHEN last_practice_date = CURRENT_DATE - INTERVAL '1 day' THEN streak_days + 1
+				ELSE 1
+			END,
+			last_practice_date = CURRENT_DATE
+		WHERE user_id = $1`
+	_, err := r.pool.Exec(ctx, q, userID, seconds)
+	return err
+}
+
+// GetStats returns aggregated stats for a user.
+func (r *Repository) GetStats(ctx context.Context, userID uuid.UUID) (UserStats, error) {
+	const q = `
+		SELECT
+			p.total_talk_seconds,
+			p.streak_days,
+			count(ps.id)::bigint,
+			coalesce(ur.avg_score, 0),
+			coalesce(ur.rating_count, 0)
+		FROM profiles p
+		LEFT JOIN practice_sessions ps ON (ps.user_a_id = $1 OR ps.user_b_id = $1)
+		LEFT JOIN user_ratings ur ON ur.user_id = $1
+		WHERE p.user_id = $1
+		GROUP BY p.total_talk_seconds, p.streak_days, ur.avg_score, ur.rating_count`
+
+	var s UserStats
+	err := r.pool.QueryRow(ctx, q, userID).Scan(
+		&s.TotalTalkSeconds, &s.StreakDays, &s.SessionCount, &s.AvgScore, &s.RatingCount,
+	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return UserStats{}, nil
+	}
+	if err != nil {
+		return UserStats{}, err
+	}
+	s.Level = LevelFromSeconds(s.TotalTalkSeconds)
+	return s, nil
+}
+
+// ListSessions returns the call history for a user, most recent first.
+func (r *Repository) ListSessions(ctx context.Context, userID uuid.UUID, limit int) ([]SessionHistoryItem, error) {
+	if limit <= 0 {
+		limit = 50
+	}
+	const q = `
+		SELECT
+			ps.id,
+			CASE WHEN ps.user_a_id = $1 THEN ps.user_b_id ELSE ps.user_a_id END AS partner_id,
+			u.username,
+			ps.status,
+			ps.started_at,
+			ps.ended_at,
+			COALESCE(
+				EXTRACT(EPOCH FROM (ps.ended_at - ps.started_at))::BIGINT,
+				0
+			) AS duration_sec
+		FROM practice_sessions ps
+		JOIN users u ON u.id = (CASE WHEN ps.user_a_id = $1 THEN ps.user_b_id ELSE ps.user_a_id END)
+		WHERE ps.user_a_id = $1 OR ps.user_b_id = $1
+		ORDER BY ps.started_at DESC
+		LIMIT $2`
+
+	rows, err := r.pool.Query(ctx, q, userID, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var out []SessionHistoryItem
+	for rows.Next() {
+		var item SessionHistoryItem
+		if err := rows.Scan(
+			&item.ID, &item.PartnerID, &item.Username,
+			&item.Status, &item.StartedAt, &item.EndedAt, &item.DurationSec,
+		); err != nil {
+			return nil, err
+		}
+		out = append(out, item)
+	}
+	if out == nil {
+		out = []SessionHistoryItem{}
+	}
+	return out, rows.Err()
 }
 
 type scanner interface {
@@ -169,6 +266,15 @@ func scanUser(row scanner) (User, error) {
 		&u.IsVerified, &u.IsPremium, &u.PremiumUntil, &u.CreatedAt, &u.UpdatedAt,
 	)
 	return u, err
+}
+
+func scanProfile(row scanner) (Profile, error) {
+	var p Profile
+	err := row.Scan(
+		&p.UserID, &p.NativeLanguage, &p.LearningLanguage, &p.Bio, &p.AvatarURL,
+		&p.Country, &p.StreakDays, &p.LastPracticeDate, &p.TotalTalkSeconds,
+	)
+	return p, err
 }
 
 func isUniqueViolation(err error) bool {

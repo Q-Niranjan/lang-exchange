@@ -55,6 +55,13 @@ type OTPConfig struct {
 	Length      int
 	SMSProvider string
 	Master      string
+	Twilio      TwilioConfig
+}
+
+type TwilioConfig struct {
+	AccountSID string
+	AuthToken  string
+	From       string
 }
 
 type PaymentConfig struct {
@@ -157,6 +164,11 @@ func Load() (*Config, error) {
 			Length:      otpLen,
 			SMSProvider: getEnv("SMS_PROVIDER", "console"),
 			Master:      strings.TrimSpace(os.Getenv("OTP_MASTER")),
+			Twilio: TwilioConfig{
+				AccountSID: os.Getenv("TWILIO_ACCOUNT_SID"),
+				AuthToken:  os.Getenv("TWILIO_AUTH_TOKEN"),
+				From:       os.Getenv("TWILIO_FROM"),
+			},
 		},
 		Payment: PaymentConfig{
 			Currency: getEnv("PAYMENT_CURRENCY", "INR"),

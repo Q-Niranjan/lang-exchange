@@ -61,7 +61,7 @@ func main() {
 	otp := auth.NewOTPStore(rdb, cfg.OTP.TTL, cfg.OTP.Length, cfg.OTP.Master)
 	tokens := auth.NewTokenStore(rdb)
 	jwt := auth.NewJWT(cfg.JWT.AccessSecret, cfg.JWT.RefreshSecret, cfg.JWT.AccessTTL, cfg.JWT.RefreshTTL)
-	authSvc := auth.NewService(userRepo, otp, tokens, jwt, auth.NewSMSSender(cfg.OTP.SMSProvider))
+	authSvc := auth.NewService(userRepo, otp, tokens, jwt, auth.NewSMSSender(cfg.OTP))
 	authH := auth.NewHandler(authSvc)
 
 	practiceRepo := practice.NewRepository(pool)
@@ -86,8 +86,8 @@ func main() {
 
 	gw := payment.NewGateway(cfg.Payment)
 	payRepo := payment.NewRepository(pool)
-	paySvc := payment.NewService(cfg.Payment, payRepo, userRepo, gw)
-	payH := payment.NewHandler(paySvc)
+	paySvc := payment.NewService(cfg.Payment, cfg.App.BaseURL, payRepo, userRepo, gw)
+	payH := payment.NewHandler(paySvc, cfg.App.Env)
 
 	router := httpserver.NewRouter(httpserver.Deps{
 		Auth:     authH,
