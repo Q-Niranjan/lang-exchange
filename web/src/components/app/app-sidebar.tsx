@@ -7,10 +7,11 @@ import {
 } from "lucide-react";
 
 import type { User as AppUser } from "@/lib/api";
+import { PRACTICE_PARTNER_LABEL } from "@/lib/labels";
 
 const NAV = [
   { href: "/app/home", label: "Home", icon: Home, match: (p: string) => p === "/app/home" || p === "/app" },
-  { href: "/app/practice", label: "1:1 Practice", icon: Mic, match: (p: string) => p.startsWith("/app/practice") },
+  { href: "/app/practice", label: PRACTICE_PARTNER_LABEL, shortLabel: "Call", icon: Mic, match: (p: string) => p.startsWith("/app/practice") },
   { href: "/app/friends", label: "Friends", icon: Users, match: (p: string) => p.startsWith("/app/friends") },
   { href: "/app/chat", label: "Chat", icon: MessageSquare, match: (p: string) => p.startsWith("/app/chat") },
   { href: "/app/plan", label: "Plan", icon: CreditCard, match: (p: string) => p.startsWith("/app/plan") || p.startsWith("/app/billing") },
@@ -88,7 +89,7 @@ export function AppMobileNav() {
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex h-14 border-t border-border bg-card">
-      {items.map(({ href, label, icon: Icon, match }) => {
+      {items.map(({ href, label, shortLabel, icon: Icon, match }) => {
         const active = match(pathname);
         return (
           <Link
@@ -99,7 +100,7 @@ export function AppMobileNav() {
             }`}
           >
             <Icon className="h-4 w-4" />
-            <span>{label.split(" ")[0]}</span>
+            <span>{shortLabel ?? label.split(" ")[0]}</span>
           </Link>
         );
       })}

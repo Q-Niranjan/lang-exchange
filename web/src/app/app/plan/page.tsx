@@ -9,6 +9,7 @@ import { LoadingState } from "@/components/app/loading-state";
 import { EmptyState } from "@/components/app/empty-state";
 import { useToast } from "@/components/app/toast-provider";
 import { api, ApiError, PaymentOrder, Plan, User } from "@/lib/api";
+import { PRACTICE_PARTNER_LABEL } from "@/lib/labels";
 
 declare global {
   interface Window {
@@ -35,7 +36,7 @@ function formatDate(value?: string) {
 }
 
 const FEATURES = [
-  "Unlimited 1:1 voice practice",
+  `Unlimited ${PRACTICE_PARTNER_LABEL.toLowerCase()} sessions`,
   "Text chat with partners",
   "Friends list & call again",
   "Streak & level tracking",

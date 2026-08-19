@@ -9,10 +9,12 @@ import { SiteHeader } from "@/components/site-header";
 import "./globals.css";
 import { Providers } from "./providers";
 
+import { PRACTICE_PARTNER_LABEL } from "@/lib/labels";
+
 export const metadata: Metadata = {
-  title: "LangExchange — Practice any language with native speakers",
+  title: `LangExchange — ${PRACTICE_PARTNER_LABEL}`,
   description:
-    "Match with real native speakers for live 1:1 voice exchange. 7-day free trial. No credit card needed.",
+    `Match with real native speakers — ${PRACTICE_PARTNER_LABEL.toLowerCase()} for live voice exchange. 7-day free trial. No credit card needed.`,
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

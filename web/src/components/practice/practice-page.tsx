@@ -11,6 +11,7 @@ import { isLoggedIn } from "@/lib/auth";
 
 import { PageHeader } from "@/components/app/page-header";
 import { useToast } from "@/components/app/toast-provider";
+import { PRACTICE_PARTNER_LABEL } from "@/lib/labels";
 import { IdlePanel } from "./idle-panel";
 import { LEVELS, type Level } from "./languages";
 import { MatchingPanel } from "./matching-panel";
@@ -496,7 +497,7 @@ export function PracticePage() {
     <div className={`mx-auto w-full px-4 py-8 space-y-6 ${phase === "session" && chatOpen ? "max-w-4xl" : "max-w-xl"}`}>
       {phase === "idle" && (
         <PageHeader
-          title="1:1 Practice"
+          title={PRACTICE_PARTNER_LABEL}
           description="Call a practice partner for a live voice exchange."
         />
       )}

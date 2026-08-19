@@ -18,6 +18,7 @@ import { useChatSocket } from "@/hooks/use-chat-socket";
 import { PremiumModal } from "@/components/practice/premium-modal";
 import { IncomingCallModal } from "@/components/chat/incoming-call-modal";
 import { displayName, initials, languageLabel } from "@/components/practice/languages";
+import { PRACTICE_PARTNER_LABEL } from "@/lib/labels";
 
 const PAGE_SIZE = 20;
 
@@ -170,7 +171,7 @@ export function FriendsPage() {
           description="Complete a practice session and add your partner as a friend."
           action={
             <Link href="/app/practice" className="text-sm font-medium text-primary hover:underline">
-              Find a partner
+              {PRACTICE_PARTNER_LABEL}
             </Link>
           }
         />
@@ -207,7 +208,7 @@ export function FriendsPage() {
                   onClick={() => void callAgain(friend)}
                   className="flex flex-1 items-center justify-center gap-1.5 rounded-md bg-primary py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                 >
-                  <Phone className="h-3.5 w-3.5" /> Practice
+                  <Phone className="h-3.5 w-3.5" /> Call
                 </button>
                 <button
                   type="button"

@@ -2,6 +2,7 @@
 
 import { Phone, Users } from "lucide-react";
 import { LEVELS, focusRing, languageByCode, type Level } from "./languages";
+import { PRACTICE_PARTNER_LABEL } from "@/lib/labels";
 
 type Stats = {
   sessionCount: number;
@@ -88,7 +89,7 @@ export function IdlePanel({
         className={`flex w-full items-center justify-center gap-2 rounded-md bg-primary py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors ${focusRing}`}
       >
         <Phone className="h-4 w-4" />
-        {busy ? "Connecting…" : "Call Practice Partner"}
+        {busy ? "Connecting…" : PRACTICE_PARTNER_LABEL}
       </button>
     </section>
   );

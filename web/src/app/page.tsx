@@ -7,10 +7,12 @@ import {
   ArrowRight, Check, Users, ShieldCheck, Clock, Flame,
 } from "lucide-react";
 
+import { PRACTICE_PARTNER_LABEL } from "@/lib/labels";
+
 const FEATURES = [
   {
     icon: <Mic className="h-5 w-5 text-brand-blue-light" />,
-    title: "Live 1:1 Voice Calls",
+    title: PRACTICE_PARTNER_LABEL,
     body: "WebRTC peer-to-peer audio — no downloads, no scheduling. Connect instantly with a native speaker.",
   },
   {
@@ -41,7 +43,7 @@ const FEATURES = [
 ];
 
 const PLAN_FEATURES = [
-  "Unlimited live 1:1 voice sessions",
+  `Unlimited ${PRACTICE_PARTNER_LABEL.toLowerCase()} sessions`,
   "WebRTC peer-to-peer calls",
   "Text chat with practice partners",
   "Friend list & call-again",
@@ -106,7 +108,7 @@ export default function HomePage() {
           </h1>
 
           <p className="text-base sm:text-lg text-muted-foreground leading-relaxed max-w-2xl mx-auto">
-            LangExchange pairs you instantly for live 1:1 voice exchange sessions.
+            LangExchange lets you {PRACTICE_PARTNER_LABEL.toLowerCase()} for live voice exchange.
             No flashcards, no scheduling. Just real conversation — globally.
           </p>
 

@@ -55,7 +55,7 @@ export function MatchingPanel({ learning, myUsername, error, onCancel }: Props) 
 
         <div className="space-y-1 max-w-xs">
           <h2 className="font-extrabold text-lg text-card-foreground">
-            Finding a {lang?.name ?? "Language"} Partner
+            Finding a Practice Partner
           </h2>
           <p className="text-xs text-muted-foreground">
             Matching for <span className="text-foreground font-semibold">{myUsername || "you"}</span>… Stay on this page.

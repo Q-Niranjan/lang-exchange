@@ -11,6 +11,7 @@ import {
   api, MatchResult, SessionHistoryItem, User, UserStats,
 } from "@/lib/api";
 import { languageByCode } from "@/components/practice/languages";
+import { PRACTICE_PARTNER_LABEL } from "@/lib/labels";
 
 function formatDuration(secs: number): string {
   const h = Math.floor(secs / 3600);
@@ -84,7 +85,7 @@ export default function HomePage() {
             href="/app/practice"
             className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
           >
-            Start 1:1 Practice
+            {PRACTICE_PARTNER_LABEL}
             <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
@@ -129,7 +130,7 @@ export default function HomePage() {
             description="Complete your first practice session to see activity here."
             action={
               <Link href="/app/practice" className="text-sm font-medium text-primary hover:underline">
-                Start practicing
+                {PRACTICE_PARTNER_LABEL}
               </Link>
             }
           />

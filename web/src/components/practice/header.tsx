@@ -7,6 +7,7 @@ import {
   CreditCard, Mic, User, Bell,
 } from "lucide-react";
 import { NotificationBell } from "@/components/notifications/notification-bell";
+import { PRACTICE_PARTNER_LABEL } from "@/lib/labels";
 
 export type SidebarTab = {
   id: string;
@@ -110,7 +111,7 @@ export function PracticeHeader({
           <NavItem
             href="/app"
             icon={<Mic className="h-4 w-4 shrink-0" />}
-            label="Practice"
+            label={PRACTICE_PARTNER_LABEL}
             active={pathname === "/app"}
           />
           <NavItem
@@ -249,7 +250,7 @@ export function PracticeHeader({
           {
             href: "/app",
             icon: <Mic className="h-5 w-5" />,
-            label: "Practice",
+            label: "Call",
             match: (p: string) => p === "/app",
           },
           {

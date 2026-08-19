@@ -19,6 +19,7 @@ import { PremiumModal } from "@/components/practice/premium-modal";
 import { IncomingCallModal } from "@/components/chat/incoming-call-modal";
 import { ConversationThread } from "@/components/chat/conversation-thread";
 import { displayName, initials, languageLabel } from "@/components/practice/languages";
+import { PRACTICE_PARTNER_LABEL } from "@/lib/labels";
 
 const PAGE_SIZE = 20;
 
@@ -256,7 +257,7 @@ export function ChatPage() {
                   className="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 md:py-1.5"
                 >
                   <Phone className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">Practice</span>
+                  <span className="hidden sm:inline">{PRACTICE_PARTNER_LABEL}</span>
                 </button>
               </div>
               <ConversationThread
