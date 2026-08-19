@@ -1,6 +1,6 @@
 "use client";
 
-import { Users } from "lucide-react";
+import { Phone, Users } from "lucide-react";
 import { LEVELS, focusRing, languageByCode, type Level } from "./languages";
 
 type Stats = {
@@ -85,9 +85,10 @@ export function IdlePanel({
         type="button"
         disabled={busy}
         onClick={onFind}
-        className={`w-full rounded-md bg-primary py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors ${focusRing}`}
+        className={`flex w-full items-center justify-center gap-2 rounded-md bg-primary py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors ${focusRing}`}
       >
-        {busy ? "Finding partner…" : `Find ${learningLang?.name ?? "Language"} Partner →`}
+        <Phone className="h-4 w-4" />
+        {busy ? "Connecting…" : "Call Practice Partner"}
       </button>
     </section>
   );

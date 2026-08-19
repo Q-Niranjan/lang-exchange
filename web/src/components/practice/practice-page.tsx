@@ -56,6 +56,7 @@ export function PracticePage() {
   const [addingFriend, setAddingFriend] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const cancelRequestedRef = useRef(false);
   const streamRef = useRef<MediaStream | null>(null);
   const sessionRef = useRef<PracticeSession | null>(null);
   const partnerLeftRef = useRef(false);
@@ -141,6 +142,7 @@ export function PracticePage() {
   };
 
   const enterSession = useCallback((res: MatchResult) => {
+    if (cancelRequestedRef.current) return;
     if (!res.session || !me.data) return;
     sessionRef.current = res.session;
     endingSelfRef.current = false;
@@ -281,6 +283,7 @@ export function PracticePage() {
   }
 
   async function onFind() {
+    cancelRequestedRef.current = false;
     setError("");
     setBusy(true);
     try {
@@ -310,10 +313,12 @@ export function PracticePage() {
         body: JSON.stringify({ native_language: native, learning_language: learning }),
         signal: ac.signal,
       });
+      if (cancelRequestedRef.current) return;
       if (res.status === "matched" && res.session) {
         enterSession(res);
       }
     } catch (err) {
+      if (cancelRequestedRef.current) return;
       if (err instanceof DOMException && err.name === "AbortError") return;
       setPhase("idle");
       stopStream();
@@ -321,25 +326,24 @@ export function PracticePage() {
     }
   }
 
-  async function onCancel() {
+  function onCancel() {
+    if (cancelRequestedRef.current) return;
+    cancelRequestedRef.current = true;
+
     abortRef.current?.abort();
     abortRef.current = null;
-    try {
-      await api("/api/v1/practice/match/cancel", { method: "POST", body: JSON.stringify({}) });
-    } catch {
-      /* still leave the queue locally */
-    }
-    try {
-      const res = await api<MatchResult>("/api/v1/practice/match/status");
-      if (res.status === "matched" && res.session?.status === "active") {
-        enterSession(res);
-        return;
-      }
-    } catch {
-      /* fall through to idle */
-    }
-    stopStream();
+
     setPhase("idle");
+    setBusy(false);
+    setError("");
+    stopStream();
+
+    void api("/api/v1/practice/match/cancel", { method: "POST", body: JSON.stringify({}) })
+      .catch(() => undefined)
+      .finally(() => {
+        cancelRequestedRef.current = false;
+        void qc.invalidateQueries({ queryKey: ["match-status"] });
+      });
   }
 
   async function onEnd() {
@@ -493,7 +497,7 @@ export function PracticePage() {
       {phase === "idle" && (
         <PageHeader
           title="1:1 Practice"
-          description="Find a partner for a live voice exchange session."
+          description="Call a practice partner for a live voice exchange."
         />
       )}
 
@@ -520,7 +524,7 @@ export function PracticePage() {
       ) : null}
 
       {phase === "matching" ? (
-        <MatchingPanel learning={learning} myUsername={me.data?.username ?? ""} error={error} onCancel={() => void onCancel()} />
+        <MatchingPanel learning={learning} myUsername={me.data?.username ?? ""} error={error} onCancel={onCancel} />
       ) : null}
 
       {phase === "session" && session && partner && me.data ? (

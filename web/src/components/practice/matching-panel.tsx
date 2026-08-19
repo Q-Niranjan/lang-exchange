@@ -74,7 +74,7 @@ export function MatchingPanel({ learning, myUsername, error, onCancel }: Props) 
         <button
           type="button"
           onClick={onCancel}
-          className={`flex items-center gap-2 rounded-lg border border-border bg-background px-5 py-2.5 text-xs font-bold text-muted-foreground hover:text-foreground hover:bg-accent transition-all ${focusRing}`}
+          className={`flex items-center gap-2 rounded-lg border border-border bg-background px-5 py-2.5 text-xs font-bold text-muted-foreground hover:text-foreground hover:bg-accent active:scale-[0.98] transition-all ${focusRing}`}
         >
           <X className="h-4 w-4" />
           <span>Cancel Search</span>
