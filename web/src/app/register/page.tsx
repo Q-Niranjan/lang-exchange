@@ -4,7 +4,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { User, Smartphone, Lock, ArrowRight, Sparkles } from "lucide-react";
+import { Lock, ArrowRight } from "lucide-react";
+
+import { PhoneInput } from "@/components/ui/phone-input";
 
 import { api, ApiError, TokenPair } from "@/lib/api";
 import { setTokens } from "@/lib/auth";
@@ -15,10 +17,8 @@ export default function RegisterPage() {
   const toast = useToast();
   const [step, setStep] = useState<"form" | "otp">("form");
   const [form, setForm] = useState({
-    username: "",
     mobile_number: "",
     password: "",
-    gender: "other",
     otp: "",
   });
 
@@ -28,10 +28,8 @@ export default function RegisterPage() {
         method: "POST",
         auth: false,
         body: JSON.stringify({
-          username: form.username,
           mobile_number: form.mobile_number,
           password: form.password,
-          gender: form.gender,
         }),
       }),
     onSuccess: () => {
@@ -66,56 +64,30 @@ export default function RegisterPage() {
     <div className="min-h-[85vh] flex items-center justify-center px-4 sm:px-6 py-12 bg-background text-foreground">
       <div className="w-full max-w-md space-y-6">
 
-        {/* Header Title */}
         <div className="text-center space-y-2">
-       
           <h1 className="font-extrabold text-2xl sm:text-3xl text-foreground">
-            {step === "form" ? "Create Free Account" : "Verify Phone Number"}
+            {step === "form" ? "Create Account" : "Verify Phone Number"}
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground">
             {step === "form"
-              ? "Join live 1:1 voice language exchange sessions."
+              ? "Sign up with your mobile number and a password."
               : `Enter the OTP code sent to ${form.mobile_number}.`}
           </p>
         </div>
 
-        {/* Card */}
         <div className="rounded-xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-5 text-card-foreground">
           <form className="space-y-4" onSubmit={onSubmit}>
             {step === "form" ? (
               <>
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    Username
-                  </label>
-                  <div className="relative">
-                    <User className="absolute left-3.5 top-3 h-4 w-4 text-muted-foreground" />
-                    <input
-                      required
-                      type="text"
-                      placeholder="maya_en"
-                      value={form.username}
-                      onChange={(e) => setForm({ ...form, username: e.target.value })}
-                      className="w-full rounded-lg border border-input bg-background py-2.5 pl-10 pr-3 text-xs font-semibold text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                     Mobile Number
                   </label>
-                  <div className="relative">
-                    <Smartphone className="absolute left-3.5 top-3 h-4 w-4 text-muted-foreground" />
-                    <input
-                      required
-                      type="text"
-                      placeholder="9876543210"
-                      value={form.mobile_number}
-                      onChange={(e) => setForm({ ...form, mobile_number: e.target.value })}
-                      className="w-full rounded-lg border border-input bg-background py-2.5 pl-10 pr-3 text-xs font-semibold text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none"
-                    />
-                  </div>
+                  <PhoneInput
+                    required
+                    value={form.mobile_number}
+                    onChange={(mobile_number) => setForm({ ...form, mobile_number })}
+                  />
                 </div>
 
                 <div className="space-y-1.5">
@@ -127,26 +99,13 @@ export default function RegisterPage() {
                     <input
                       required
                       type="password"
+                      autoComplete="new-password"
+                      placeholder="Choose a password"
                       value={form.password}
                       onChange={(e) => setForm({ ...form, password: e.target.value })}
                       className="w-full rounded-lg border border-input bg-background py-2.5 pl-10 pr-3 text-xs font-semibold text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none"
                     />
                   </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    Gender
-                  </label>
-                  <select
-                    value={form.gender}
-                    onChange={(e) => setForm({ ...form, gender: e.target.value })}
-                    className="w-full rounded-lg border border-input bg-background p-2.5 text-xs font-semibold text-foreground focus:border-ring focus:outline-none"
-                  >
-                    <option value="female">Female</option>
-                    <option value="male">Male</option>
-                    <option value="other">Other</option>
-                  </select>
                 </div>
               </>
             ) : (
@@ -157,6 +116,8 @@ export default function RegisterPage() {
                 <input
                   required
                   type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
                   placeholder="6-digit code"
                   value={form.otp}
                   onChange={(e) => setForm({ ...form, otp: e.target.value })}

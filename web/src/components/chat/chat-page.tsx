@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, MessageSquare, Phone } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, MessageSquare, Phone } from "lucide-react";
 
 import { PageHeader } from "@/components/app/page-header";
 import { EmptyState } from "@/components/app/empty-state";
@@ -147,15 +147,32 @@ export function ChatPage() {
       }
     : null;
 
-  return (
-    <div className="flex h-[calc(100vh-3rem)] flex-col px-4 py-6 sm:px-6 md:h-[calc(100vh-0px)]">
-      <PageHeader title="Chat" description="Message your friends." />
+  const showConversation = Boolean(activeId && me.data && partner);
+  const showList = !showConversation;
 
-      {/* Fixed-height split layout */}
-      <div className="flex min-h-0 flex-1 gap-4 overflow-hidden">
-        {/* Friends / contacts list */}
-        <aside className="flex w-72 shrink-0 flex-col rounded-lg border border-border bg-card overflow-hidden">
-          <div className="border-b border-border px-4 py-3">
+  return (
+    <div className="flex h-[calc(100dvh-7rem)] flex-col overflow-hidden md:h-[calc(100dvh-2rem)] md:px-6 md:py-4">
+      {/* Desktop page title */}
+      <div className="hidden shrink-0 md:block">
+        <PageHeader title="Chat" description="Message your friends." />
+      </div>
+
+      {/* Mobile list title */}
+      {showList ? (
+        <div className="shrink-0 border-b border-border px-4 py-3 md:hidden">
+          <h1 className="text-lg font-semibold text-foreground">Chat</h1>
+          <p className="text-xs text-muted-foreground">Message your friends</p>
+        </div>
+      ) : null}
+
+      <div className="flex min-h-0 flex-1 flex-col md:flex-row md:gap-4">
+        {/* Friends list — full width on mobile, sidebar on desktop */}
+        <aside
+          className={`flex min-h-0 flex-col overflow-hidden rounded-lg border border-border bg-card md:w-72 md:shrink-0 ${
+            showList ? "flex flex-1" : "hidden md:flex"
+          }`}
+        >
+          <div className="hidden border-b border-border px-4 py-3 md:block">
             <p className="text-sm font-medium text-foreground">Friends</p>
           </div>
           <div className="flex-1 overflow-y-auto">
@@ -170,15 +187,15 @@ export function ChatPage() {
                     <button
                       type="button"
                       onClick={() => void openChat(friend)}
-                      className={`flex w-full items-center gap-3 p-3 text-left hover:bg-secondary transition-colors ${
+                      className={`flex w-full items-center gap-3 p-4 text-left hover:bg-secondary transition-colors md:p-3 ${
                         activeId === friend.conversation_id ? "bg-secondary" : ""
                       }`}
                     >
                       <div className="relative shrink-0">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-muted text-xs font-bold">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-muted text-sm font-bold md:h-9 md:w-9 md:text-xs">
                           {initials(friend.username)}
                         </div>
-                        <span className={`absolute bottom-0 right-0 h-2 w-2 rounded-full border border-card ${friend.online ? "bg-emerald-500" : "bg-muted-foreground/40"}`} />
+                        <span className={`absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-card md:h-2 md:w-2 md:border ${friend.online ? "bg-emerald-500" : "bg-muted-foreground/40"}`} />
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-medium">{displayName(friend.username)}</p>
@@ -203,29 +220,47 @@ export function ChatPage() {
           )}
         </aside>
 
-        {/* Chat area — fixed height, scrollable messages */}
-        <section className="flex min-w-0 flex-1 flex-col rounded-lg border border-border bg-card overflow-hidden">
-          {activeId && me.data && partner ? (
+        {/* Conversation — full screen on mobile when active */}
+        <section
+          className={`min-h-0 flex-col overflow-hidden rounded-lg border border-border bg-card md:flex md:min-w-0 md:flex-1 ${
+            showConversation ? "flex flex-1" : "hidden md:flex"
+          }`}
+        >
+          {showConversation && me.data && partner ? (
             <>
-              <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
-                <div>
-                  <p className="text-sm font-medium text-foreground">{displayName(partner.username)}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {activeFriend?.online ? "Online" : "Offline"}
-                    {partner.native_language ? ` · ${languageLabel(partner.native_language)}` : ""}
-                  </p>
+              <div className="flex shrink-0 items-center gap-2 border-b border-border px-3 py-2.5 md:px-4 md:py-3">
+                <button
+                  type="button"
+                  onClick={() => setActiveId(null)}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full hover:bg-secondary md:hidden"
+                  aria-label="Back to friends"
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </button>
+                <div className="flex min-w-0 flex-1 items-center gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold md:hidden">
+                    {initials(partner.username)}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-foreground">{displayName(partner.username)}</p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {activeFriend?.online ? "Online" : "Offline"}
+                      {partner.native_language ? ` · ${languageLabel(partner.native_language)}` : ""}
+                    </p>
+                  </div>
                 </div>
                 <button
                   type="button"
                   disabled={callBusy}
                   onClick={() => void callAgain(partner.id)}
-                  className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 md:py-1.5"
                 >
-                  <Phone className="h-3.5 w-3.5" /> Practice
+                  <Phone className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Practice</span>
                 </button>
               </div>
               <ConversationThread
-                conversationId={activeId}
+                conversationId={activeId!}
                 myId={me.data.id}
                 partner={partner}
                 incoming={liveMessage}
@@ -233,9 +268,9 @@ export function ChatPage() {
               />
             </>
           ) : (
-            <div className="flex flex-1 flex-col items-center justify-center gap-2 text-muted-foreground">
+            <div className="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-muted-foreground">
               <MessageSquare className="h-8 w-8 opacity-40" />
-              <p className="text-sm">Select a friend to start chatting</p>
+              <p className="text-sm text-center">Select a friend to start chatting</p>
             </div>
           )}
         </section>

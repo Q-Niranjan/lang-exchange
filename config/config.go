@@ -165,9 +165,9 @@ func Load() (*Config, error) {
 			SMSProvider: getEnv("SMS_PROVIDER", "console"),
 			Master:      strings.TrimSpace(os.Getenv("OTP_MASTER")),
 			Twilio: TwilioConfig{
-				AccountSID: os.Getenv("TWILIO_ACCOUNT_SID"),
-				AuthToken:  os.Getenv("TWILIO_AUTH_TOKEN"),
-				From:       os.Getenv("TWILIO_FROM"),
+				AccountSID: envTrim("TWILIO_ACCOUNT_SID"),
+				AuthToken:  envTrim("TWILIO_AUTH_TOKEN"),
+				From:       envTrim("TWILIO_FROM"),
 			},
 		},
 		Payment: PaymentConfig{
@@ -275,4 +275,13 @@ func getEnv(key, fallback string) string {
 		return v
 	}
 	return fallback
+}
+
+// envTrim reads an env var and strips whitespace / inline # comments (common .env mistake).
+func envTrim(key string) string {
+	raw := strings.TrimSpace(os.Getenv(key))
+	if i := strings.Index(raw, "#"); i >= 0 {
+		raw = strings.TrimSpace(raw[:i])
+	}
+	return raw
 }

@@ -26,10 +26,8 @@ func NewService(users *user.Repository, otp *OTPStore, tokens *TokenStore, jwt *
 }
 
 type RegisterInput struct {
-	Username     string `json:"username" binding:"required"`
 	MobileNumber string `json:"mobile_number" binding:"required"`
 	Password     string `json:"password" binding:"required"`
-	Gender       string `json:"gender" binding:"required"`
 }
 
 type LoginInput struct {
@@ -47,17 +45,9 @@ type RefreshInput struct {
 }
 
 func (s *Service) Register(ctx context.Context, in RegisterInput) error {
-	in.Username = strings.TrimSpace(in.Username)
 	in.MobileNumber = strings.TrimSpace(in.MobileNumber)
-	in.Gender = strings.ToLower(strings.TrimSpace(in.Gender))
 
-	if err := user.ValidateUsername(in.Username); err != nil {
-		return err
-	}
 	if err := user.ValidateMobile(in.MobileNumber); err != nil {
-		return err
-	}
-	if err := user.ValidateGender(in.Gender); err != nil {
 		return err
 	}
 	if err := ValidatePassword(in.Password); err != nil {
@@ -68,17 +58,39 @@ func (s *Service) Register(ctx context.Context, in RegisterInput) error {
 	if err != nil {
 		return err
 	}
-	_, err = s.users.Create(ctx, user.User{
-		Username:     in.Username,
-		MobileNumber: in.MobileNumber,
-		PasswordHash: hash,
-		Gender:       in.Gender,
-	})
-	if errors.Is(err, user.ErrDuplicate) {
-		return httputil.Conflict("user_exists", "username or mobile number already registered")
+
+	var createErr error
+	for attempt := 0; attempt < 8; attempt++ {
+		username, uerr := randomUsername()
+		if uerr != nil {
+			return uerr
+		}
+		if err := user.ValidateUsername(username); err != nil {
+			continue
+		}
+		_, createErr = s.users.Create(ctx, user.User{
+			Username:     username,
+			MobileNumber: in.MobileNumber,
+			PasswordHash: hash,
+			Gender:       "other",
+		})
+		if createErr == nil {
+			break
+		}
+		if errors.Is(createErr, user.ErrDuplicate) {
+			existing, lookupErr := s.users.GetByMobile(ctx, in.MobileNumber)
+			if lookupErr == nil && existing.MobileNumber == in.MobileNumber {
+				return httputil.Conflict("user_exists", "mobile number already registered")
+			}
+			continue
+		}
+		return createErr
 	}
-	if err != nil {
-		return err
+	if createErr != nil {
+		if errors.Is(createErr, user.ErrDuplicate) {
+			return httputil.Conflict("user_exists", "could not allocate username, try again")
+		}
+		return createErr
 	}
 
 	otp, err := s.otp.Generate(ctx, in.MobileNumber)

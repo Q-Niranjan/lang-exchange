@@ -100,7 +100,7 @@ export function ConversationThread({ conversationId, myId, partner, incoming, co
       </div>
 
       <form
-        className="flex items-center gap-2 border-t border-border p-3"
+        className="flex shrink-0 items-center gap-2 border-t border-border bg-card p-3"
         onSubmit={(e) => {
           e.preventDefault();
           void send();
@@ -110,12 +110,12 @@ export function ConversationThread({ conversationId, myId, partner, incoming, co
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           placeholder={`Message ${name.split(" ")[0]}…`}
-          className={`flex-1 rounded-xl border border-input bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none ${focusRing}`}
+          className={`min-w-0 flex-1 rounded-xl border border-input bg-background px-3 py-2.5 text-base text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none md:text-sm ${focusRing}`}
         />
         <button
           type="submit"
           disabled={sending || !draft.trim()}
-          className={`flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground disabled:opacity-40 ${focusRing}`}
+          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground disabled:opacity-40 md:h-10 md:w-10 ${focusRing}`}
         >
           <Send className="h-4 w-4" />
         </button>

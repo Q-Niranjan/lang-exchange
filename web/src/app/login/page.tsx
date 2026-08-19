@@ -4,7 +4,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { Lock, Smartphone, ArrowRight, ShieldCheck } from "lucide-react";
+import { Lock, ArrowRight } from "lucide-react";
+
+import { PhoneInput } from "@/components/ui/phone-input";
 
 import { api, ApiError, TokenPair } from "@/lib/api";
 import { setTokens } from "@/lib/auth";
@@ -68,7 +70,7 @@ export default function LoginPage() {
         <div className="text-center space-y-2">
         
           <h1 className="font-extrabold text-2xl sm:text-3xl text-foreground">Welcome Back</h1>
-          <p className="text-xs sm:text-sm text-muted-foreground">Log in to enter the EngFluency practice studio.</p>
+          <p className="text-xs sm:text-sm text-muted-foreground">Log in to enter the LangExchange practice studio.</p>
         </div>
 
         {/* Card */}
@@ -78,17 +80,11 @@ export default function LoginPage() {
               <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                 Mobile Number
               </label>
-              <div className="relative">
-                <Smartphone className="absolute left-3.5 top-3 h-4 w-4 text-muted-foreground" />
-                <input
-                  required
-                  type="text"
-                  placeholder="+19876543210"
-                  value={form.mobile_number}
-                  onChange={(e) => setForm({ ...form, mobile_number: e.target.value })}
-                  className="w-full rounded-lg border border-input bg-background py-2.5 pl-10 pr-3 text-xs font-semibold text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none"
-                />
-              </div>
+              <PhoneInput
+                required
+                value={form.mobile_number}
+                onChange={(mobile_number) => setForm({ ...form, mobile_number })}
+              />
             </div>
 
             <div className="space-y-1.5">
