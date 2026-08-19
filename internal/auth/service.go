@@ -14,15 +14,20 @@ import (
 )
 
 type Service struct {
-	users  *user.Repository
-	otp    *OTPStore
-	tokens *TokenStore
-	jwt    *JWT
-	sms    SMSSender
+	users     *user.Repository
+	otp       *OTPStore
+	tokens    *TokenStore
+	jwt       *JWT
+	sms       SMSSender
+	otpBypass bool
 }
 
-func NewService(users *user.Repository, otp *OTPStore, tokens *TokenStore, jwt *JWT, sms SMSSender) *Service {
-	return &Service{users: users, otp: otp, tokens: tokens, jwt: jwt, sms: sms}
+func NewService(users *user.Repository, otp *OTPStore, tokens *TokenStore, jwt *JWT, sms SMSSender, otpBypass bool) *Service {
+	return &Service{users: users, otp: otp, tokens: tokens, jwt: jwt, sms: sms, otpBypass: otpBypass}
+}
+
+type RegisterResult struct {
+	Tokens *TokenPair
 }
 
 type RegisterInput struct {
@@ -44,31 +49,34 @@ type RefreshInput struct {
 	RefreshToken string `json:"refresh_token" binding:"required"`
 }
 
-func (s *Service) Register(ctx context.Context, in RegisterInput) error {
+func (s *Service) Register(ctx context.Context, in RegisterInput) (RegisterResult, error) {
 	in.MobileNumber = strings.TrimSpace(in.MobileNumber)
 
 	if err := user.ValidateMobile(in.MobileNumber); err != nil {
-		return err
+		return RegisterResult{}, err
 	}
 	if err := ValidatePassword(in.Password); err != nil {
-		return httputil.BadRequest("weak_password", err.Error())
+		return RegisterResult{}, httputil.BadRequest("weak_password", err.Error())
 	}
 
 	hash, err := HashPassword(in.Password)
 	if err != nil {
-		return err
+		return RegisterResult{}, err
 	}
 
-	var createErr error
+	var (
+		created   user.User
+		createErr error
+	)
 	for attempt := 0; attempt < 8; attempt++ {
 		username, uerr := randomUsername()
 		if uerr != nil {
-			return uerr
+			return RegisterResult{}, uerr
 		}
 		if err := user.ValidateUsername(username); err != nil {
 			continue
 		}
-		_, createErr = s.users.Create(ctx, user.User{
+		created, createErr = s.users.Create(ctx, user.User{
 			Username:     username,
 			MobileNumber: in.MobileNumber,
 			PasswordHash: hash,
@@ -80,34 +88,38 @@ func (s *Service) Register(ctx context.Context, in RegisterInput) error {
 		if errors.Is(createErr, user.ErrDuplicate) {
 			existing, lookupErr := s.users.GetByMobile(ctx, in.MobileNumber)
 			if lookupErr == nil && existing.MobileNumber == in.MobileNumber {
-				return httputil.Conflict("user_exists", "mobile number already registered")
+				return RegisterResult{}, httputil.Conflict("user_exists", "mobile number already registered")
 			}
 			continue
 		}
-		return createErr
+		return RegisterResult{}, createErr
 	}
 	if createErr != nil {
 		if errors.Is(createErr, user.ErrDuplicate) {
-			return httputil.Conflict("user_exists", "could not allocate username, try again")
+			return RegisterResult{}, httputil.Conflict("user_exists", "could not allocate username, try again")
 		}
-		return createErr
+		return RegisterResult{}, createErr
+	}
+
+	if s.otpBypass {
+		tokens, err := s.finishVerification(ctx, created)
+		if err != nil {
+			return RegisterResult{}, err
+		}
+		return RegisterResult{Tokens: &tokens}, nil
 	}
 
 	otp, err := s.otp.Generate(ctx, in.MobileNumber)
 	if err != nil {
-		return err
+		return RegisterResult{}, err
 	}
-	return s.sms.SendOTP(in.MobileNumber, otp)
+	if err := s.sms.SendOTP(in.MobileNumber, otp); err != nil {
+		return RegisterResult{}, err
+	}
+	return RegisterResult{}, nil
 }
 
 func (s *Service) VerifyOTP(ctx context.Context, in VerifyOTPInput) (TokenPair, error) {
-	ok, err := s.otp.Verify(ctx, in.MobileNumber, in.OTP)
-	if err != nil {
-		return TokenPair{}, err
-	}
-	if !ok {
-		return TokenPair{}, httputil.Unauthorized("invalid or expired otp")
-	}
 	u, err := s.users.GetByMobile(ctx, in.MobileNumber)
 	if errors.Is(err, user.ErrNotFound) {
 		return TokenPair{}, httputil.NotFound("user not found")
@@ -115,15 +127,18 @@ func (s *Service) VerifyOTP(ctx context.Context, in VerifyOTPInput) (TokenPair, 
 	if err != nil {
 		return TokenPair{}, err
 	}
-	if err := s.users.MarkVerified(ctx, u.ID); err != nil {
-		return TokenPair{}, err
+
+	if !s.otpBypass {
+		ok, err := s.otp.Verify(ctx, in.MobileNumber, in.OTP)
+		if err != nil {
+			return TokenPair{}, err
+		}
+		if !ok {
+			return TokenPair{}, httputil.Unauthorized("invalid or expired otp")
+		}
 	}
-	// Grant 7-day free trial for brand-new users.
-	if !u.IsPremium {
-		trial := time.Now().Add(7 * 24 * time.Hour)
-		_ = s.users.SetPremium(ctx, u.ID, trial)
-	}
-	return s.issue(ctx, u.ID)
+
+	return s.finishVerification(ctx, u)
 }
 
 func (s *Service) Login(ctx context.Context, in LoginInput) (TokenPair, error) {
@@ -138,12 +153,28 @@ func (s *Service) Login(ctx context.Context, in LoginInput) (TokenPair, error) {
 		return TokenPair{}, httputil.Unauthorized("invalid credentials")
 	}
 	if !u.IsVerified {
+		if s.otpBypass {
+			return s.finishVerification(ctx, u)
+		}
 		otp, err := s.otp.Generate(ctx, u.MobileNumber)
 		if err != nil {
 			return TokenPair{}, err
 		}
 		_ = s.sms.SendOTP(u.MobileNumber, otp)
 		return TokenPair{}, httputil.Forbidden("unverified", "account not verified; otp resent")
+	}
+	return s.issue(ctx, u.ID)
+}
+
+func (s *Service) finishVerification(ctx context.Context, u user.User) (TokenPair, error) {
+	if !u.IsVerified {
+		if err := s.users.MarkVerified(ctx, u.ID); err != nil {
+			return TokenPair{}, err
+		}
+	}
+	if !u.IsPremium {
+		trial := time.Now().Add(7 * 24 * time.Hour)
+		_ = s.users.SetPremium(ctx, u.ID, trial)
 	}
 	return s.issue(ctx, u.ID)
 }

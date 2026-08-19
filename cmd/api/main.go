@@ -61,7 +61,10 @@ func main() {
 	otp := auth.NewOTPStore(rdb, cfg.OTP.TTL, cfg.OTP.Length, cfg.OTP.Master)
 	tokens := auth.NewTokenStore(rdb)
 	jwt := auth.NewJWT(cfg.JWT.AccessSecret, cfg.JWT.RefreshSecret, cfg.JWT.AccessTTL, cfg.JWT.RefreshTTL)
-	authSvc := auth.NewService(userRepo, otp, tokens, jwt, auth.NewSMSSender(cfg.OTP))
+	if cfg.OTP.Bypass {
+		log.Println("[auth] WARNING: OTP_BYPASS is enabled — SMS verification is disabled")
+	}
+	authSvc := auth.NewService(userRepo, otp, tokens, jwt, auth.NewSMSSender(cfg.OTP), cfg.OTP.Bypass)
 	authH := auth.NewHandler(authSvc)
 
 	practiceRepo := practice.NewRepository(pool)

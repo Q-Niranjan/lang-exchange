@@ -55,6 +55,7 @@ type OTPConfig struct {
 	Length      int
 	SMSProvider string
 	Master      string
+	Bypass      bool
 	Twilio      TwilioConfig
 }
 
@@ -164,6 +165,7 @@ func Load() (*Config, error) {
 			Length:      otpLen,
 			SMSProvider: getEnv("SMS_PROVIDER", "console"),
 			Master:      strings.TrimSpace(os.Getenv("OTP_MASTER")),
+			Bypass:      getEnvBool("OTP_BYPASS", false),
 			Twilio: TwilioConfig{
 				AccountSID: envTrim("TWILIO_ACCOUNT_SID"),
 				AuthToken:  envTrim("TWILIO_AUTH_TOKEN"),
@@ -275,6 +277,21 @@ func getEnv(key, fallback string) string {
 		return v
 	}
 	return fallback
+}
+
+func getEnvBool(key string, fallback bool) bool {
+	raw := strings.TrimSpace(strings.ToLower(os.Getenv(key)))
+	if raw == "" {
+		return fallback
+	}
+	switch raw {
+	case "1", "true", "yes", "on":
+		return true
+	case "0", "false", "no", "off":
+		return false
+	default:
+		return fallback
+	}
 }
 
 // envTrim reads an env var and strips whitespace / inline # comments (common .env mistake).

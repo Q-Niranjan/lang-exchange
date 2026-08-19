@@ -24,7 +24,7 @@ export default function RegisterPage() {
 
   const register = useMutation({
     mutationFn: () =>
-      api("/api/v1/auth/register", {
+      api<TokenPair | { status: string }>("/api/v1/auth/register", {
         method: "POST",
         auth: false,
         body: JSON.stringify({
@@ -32,7 +32,13 @@ export default function RegisterPage() {
           password: form.password,
         }),
       }),
-    onSuccess: () => {
+    onSuccess: (data) => {
+      if ("access_token" in data && data.access_token) {
+        setTokens(data.access_token, data.refresh_token);
+        toast.success("Account created! Welcome to LangFluency.");
+        router.push("/app/home");
+        return;
+      }
       toast.info("Enter the OTP sent to your phone.");
       setStep("otp");
     },

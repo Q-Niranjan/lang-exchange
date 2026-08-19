@@ -23,8 +23,13 @@ func (h *Handler) Register(c *gin.Context) {
 		httputil.RespondError(c, httputil.BadRequest("invalid_body", err.Error()))
 		return
 	}
-	if err := h.svc.Register(c.Request.Context(), in); err != nil {
+	result, err := h.svc.Register(c.Request.Context(), in)
+	if err != nil {
 		httputil.RespondError(c, err)
+		return
+	}
+	if result.Tokens != nil {
+		c.JSON(http.StatusCreated, result.Tokens)
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{"status": "otp_sent"})
